@@ -527,6 +527,14 @@ public class SSIPClient {
 	}
 
 	/**
+	 * Gets the {@code SSIPConnection} this {@code SSIPClient} is using.
+	 * @return the {@code SSIPConnection}
+	 */
+	public SSIPConnection getConnection() {
+		return _connection;
+	}
+	
+	/**
 	 * Sets the current target for setting paramenters. allowed values are {@link Target#SELF} and {@link Target#ALL}, see {@link #setTarget(int)} to set targets for specific clients.
 	 * @param target
 	 */
