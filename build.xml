@@ -36,7 +36,7 @@
 	</target>
 
 	<target name="doc" description="create javadoc documentation">
-		<javadoc sourcepath="${SRC.dir}" destdir="${DOC.dir}" packagenames="speechd.ssip" access="protected" windowtitle="Speech-dispatcher java bindings" doctitle="Speech-dispatcher java bindings" overview="overview.html"/>
+		<javadoc sourcepath="${SRC.dir}" destdir="${DOC.dir}" packagenames="speechd.ssip" access="protected" windowtitle="Speech-dispatcher java bindings" doctitle="Speech-dispatcher java bindings" overview="${SRC.dir}/overview.html"/>
 	</target>
 
 	<target name="clean">
