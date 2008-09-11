@@ -44,7 +44,8 @@ import java.util.logging.Logger;
  * semantics are decoupled from SSIP comunication.<br/>
  * <code>SSIPConnection</code> instances parse and dispatch SSIP events when
  * active, see {@link SSIPConnection#setEventHandler} to define the
- * {@link SSIPEventHandler} and {@link SSIPEventParser} for more information. Note that all exceptions not catched in the event callback will be discarded.
+ * {@link SSIPEventHandler} and {@link SSIPEventParser} for more information.
+ * Note that all exceptions not catched in the event callback will be discarded.
  * The event dispatching is processed in SSIPConnection's communications thread,
  * no complicated stuff are allowed nor sending of SSIP commands. Effects for
  * this practice are undefined. Clients are responsible for sending the specific
@@ -75,32 +76,29 @@ import java.util.logging.Logger;
  * @see SSIPEvent
  * @see SSIPClient
  * @see SSIPException
- * @see <a href="http://www.freebsoft.org/doc/speechd/ssip.html#Top">The SSIP
- *      manual</a>
+ * @see <a href="http://www.freebsoft.org/doc/speechd/ssip.html#Top">The SSIP *
+ *      manual< /a>
  * 
  * @author ragb
  * 
  */
 public class SSIPConnection {
 	/**
-	 * SSIP communications task. It reads events/responses from the outer <code<SSIPConnection</code>'s
-	 * socket, parse them and synchronizes with the main thread.
+	 * SSIP communications task. It reads events/responses from the outer
+	 * <code<SSIPConnection</code>'s socket, parse them and synchronizes with
+	 * the main thread.
 	 * 
 	 * @author ragb
 	 * 
 	 */
 	private class InputThread implements Runnable {
-		public void run () {
+		public void run() {
 			while (SSIPConnection.this.isConnected()) {
 				java.util.List<String> data = new LinkedList<String>();
 				int code;
 				// read lines
 				try {
-					if (!_reader.ready()) {
-						Thread.yield();
-						continue;
-					}
-					while (true) {
+					while (_reader.ready()) {
 						String line = readLine();
 						assert (line.length() >= 4 && (line.charAt(3) == '-' || line
 								.charAt(3) == ' '));
@@ -114,11 +112,11 @@ public class SSIPConnection {
 							else
 								res = new SSIPResponse(code, msg, data);
 							dispatch(res);
-							break;
 						} else if (c == '-') {
 							data.add(line.substring(4));
 						}
 					}
+					Thread.yield();
 				} catch (IOException e) {
 					Thread.currentThread().interrupt();
 					SSIPConnection.this.disconnect();
@@ -163,8 +161,8 @@ public class SSIPConnection {
 	 */
 	private boolean _connected;
 	/**
-	 * variable to hold the Response wich the communications thread parsed and the
-	 * main thread wants to get.
+	 * variable to hold the Response wich the communications thread parsed and
+	 * the main thread wants to get.
 	 */
 	private SSIPResponse _currentResponse;
 	/**
@@ -186,11 +184,11 @@ public class SSIPConnection {
 	 * and port. ON creation the instance is disconnected.
 	 * 
 	 * @param host
-	 *          the SSIP server host where to connect
+	 *            the SSIP server host where to connect
 	 * @param port
-	 *          The SSIP server port
+	 *            The SSIP server port
 	 */
-	public SSIPConnection (String host, int port) {
+	public SSIPConnection(String host, int port) {
 		_host = host;
 		_port = port;
 		_connected = false;
@@ -203,12 +201,13 @@ public class SSIPConnection {
 	 * handling.
 	 * 
 	 * @throws SSIPException
-	 *           when a network error is found initializing connections.
+	 *             when a network error is found initializing connections.
 	 */
-	public void connect () throws SSIPException {
+	public void connect() throws SSIPException {
 		try {
 			_socket = new Socket(_host, _port);
-			_logger.log(Level.INFO, String.format("connected to %s port %d", _host, _port));
+			_logger.log(Level.INFO, String.format("connected to %s port %d",
+					_host, _port));
 			_socket.setTcpNoDelay(true);
 			_reader = new BufferedReader(new InputStreamReader(_socket
 					.getInputStream()));
@@ -216,7 +215,9 @@ public class SSIPConnection {
 					.getOutputStream()));
 
 		} catch (IOException e) {
-			_logger.log(Level.SEVERE, String.format("I/O error connecting to %s port %d: %s", _host, _port, e.getMessage()));
+			_logger.log(Level.SEVERE, String.format(
+					"I/O error connecting to %s port %d: %s", _host, _port, e
+							.getMessage()));
 			throw new SSIPCommunicationException("can't connect to host");
 		}
 		_connected = true;
@@ -229,7 +230,7 @@ public class SSIPConnection {
 	/**
 	 * Disconnects from the SSIP server.
 	 */
-	public void disconnect () {
+	public void disconnect() {
 		if (!_connected)
 			return;
 		_connected = false;
@@ -240,7 +241,8 @@ public class SSIPConnection {
 			_logger.info("disconnected from host");
 		} catch (InterruptedException e) {
 			// don't care....
-			_logger.log(Level.WARNING, "interrupted exception when disconnecting", e);
+			_logger.log(Level.WARNING,
+					"interrupted exception when disconnecting", e);
 		} catch (IOException e) {
 			// we tryed but...
 			_logger.log(Level.WARNING, "I/O exception when disconnecting", e);
@@ -257,16 +259,16 @@ public class SSIPConnection {
 	 * @see SSIPCommand
 	 * 
 	 * @param command
-	 *          the command to send
+	 *            the command to send
 	 * @return the server response
 	 * @throws SSIPCommandException
-	 *           if server returns an error response
+	 *             if server returns an error response
 	 * @throws SSIPCommunicationException
-	 *           when a communication error arrives when talking to server or
-	 *           connection is not established.
+	 *             when a communication error arrives when talking to server or
+	 *             connection is not established.
 	 */
-	public synchronized SSIPResponse sendCommand (SSIPCommand command)
-	throws SSIPCommandException, SSIPCommunicationException {
+	public synchronized SSIPResponse sendCommand(SSIPCommand command)
+			throws SSIPCommandException, SSIPCommunicationException {
 		if (!_connected)
 			throw new SSIPCommunicationException("not connected to server");
 		try {
@@ -284,7 +286,8 @@ public class SSIPConnection {
 			}
 			_currentResponse = null;
 			if (res.getCode() / 100 != 2) {// code not in 200-299
-				_logger.warning(String.format("Error code %d returned from server", res.getCode()));
+				_logger.warning(String.format(
+						"Error code %d returned from server", res.getCode()));
 				throw new SSIPCommandException(command, res);
 			}
 			return res;
@@ -293,7 +296,8 @@ public class SSIPConnection {
 			disconnect();
 			throw new SSIPCommunicationException("disconnected from server");
 		} catch (InterruptedException e) {
-			_logger.log(Level.SEVERE, "Communications thread interrupted when sending command");
+			_logger.log(Level.SEVERE,
+					"Communications thread interrupted when sending command");
 			disconnect();
 			throw new SSIPCommunicationException(e);
 		}
@@ -305,15 +309,15 @@ public class SSIPConnection {
 	 * escaping rules.
 	 * 
 	 * @param data
-	 *          the data string to send
+	 *            the data string to send
 	 * @return the server response
 	 * @throws SSIPDataException
-	 *           if server returns an error
+	 *             if server returns an error
 	 * @throws SSIPCommunicationException
-	 *           if a communication error arises. or is not connected.
+	 *             if a communication error arises. or is not connected.
 	 */
-	public synchronized SSIPResponse sendData (String data)
-	throws SSIPDataException, SSIPCommunicationException {
+	public synchronized SSIPResponse sendData(String data)
+			throws SSIPDataException, SSIPCommunicationException {
 		if (!_connected)
 			throw new SSIPCommunicationException("not connected to server");
 		String dataEscaped = escapeData(data);
@@ -344,10 +348,10 @@ public class SSIPConnection {
 	 * escapes data for sending to SSIP server acording to SSIP rules
 	 * 
 	 * @param data
-	 *          the data
+	 *            the data
 	 * @return the escaped version of data
 	 */
-	private String escapeData (String data) {
+	private String escapeData(String data) {
 		String escaped = data;
 		if (escaped.startsWith("."))
 			escaped = ".." + escaped;
@@ -361,18 +365,20 @@ public class SSIPConnection {
 	 * thread, notifying the main one when event is meant to direct processing.
 	 * 
 	 * @param response
-	 *          the response do dispatch
+	 *            the response do dispatch
 	 * @throws InterruptedException
-	 *           if communications thread is interrupted
+	 *             if communications thread is interrupted
 	 */
-	private void dispatch (SSIPResponse response) throws InterruptedException {
+	private void dispatch(SSIPResponse response) throws InterruptedException {
 		if (response.getCode() / 100 == 7) {// we've got an SSIP event
 			if (_eventHandler != null) {
 				try {
-					_eventHandler.handleSSIPEvent(SSIPEventParser.getInstance().parse(
-							response));
-				} catch(Exception e) {
-_logger.severe(String.format("Exception in user callback: %s\n%s", e.getLocalizedMessage(), e.getStackTrace()));
+					_eventHandler.handleSSIPEvent(SSIPEventParser.getInstance()
+							.parse(response));
+				} catch (Exception e) {
+					_logger.severe(String.format(
+							"Exception in user callback: %s\n%s", e
+									.getLocalizedMessage(), e.getStackTrace()));
 				}
 			}
 		} else {
@@ -389,9 +395,9 @@ _logger.severe(String.format("Exception in user callback: %s\n%s", e.getLocalize
 	 * 
 	 * @return the line read without the ending cr/lf pair.
 	 * @throws IOException
-	 *           if an io error ocurs.
+	 *             if an io error ocurs.
 	 */
-	private String readLine () throws IOException {
+	private String readLine() throws IOException {
 		// thanks Sérgio Neves for this one
 		StringBuilder sb = new StringBuilder();
 		char c1 = (char) _reader.read(), c2 = (char) _reader.read();
@@ -410,7 +416,7 @@ _logger.severe(String.format("Exception in user callback: %s\n%s", e.getLocalize
 	 * @return <code>true</code> if connected, <code>false</code> if
 	 *         disconnected.
 	 */
-	public boolean isConnected () {
+	public boolean isConnected() {
 		return _connected;
 	}
 
@@ -420,7 +426,7 @@ _logger.severe(String.format("Exception in user callback: %s\n%s", e.getLocalize
 	 * 
 	 * @return the eventHandler if defined, <code>null</code> if not.
 	 */
-	public SSIPEventHandler getEventHandler () {
+	public SSIPEventHandler getEventHandler() {
 		return _eventHandler;
 	}
 
@@ -429,9 +435,9 @@ _logger.severe(String.format("Exception in user callback: %s\n%s", e.getLocalize
 	 * server associated with this connection.
 	 * 
 	 * @param eventHandler
-	 *          the eventHandler to set
+	 *            the eventHandler to set
 	 */
-	public void setEventHandler (SSIPEventHandler eventHandler) {
+	public void setEventHandler(SSIPEventHandler eventHandler) {
 		_eventHandler = eventHandler;
 	}
 }
